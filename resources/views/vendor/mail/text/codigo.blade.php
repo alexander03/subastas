@@ -1,0 +1,1 @@
+{{ $etiqueta }}: {{ trim($slot) }}

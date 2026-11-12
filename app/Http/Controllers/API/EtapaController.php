@@ -16,6 +16,9 @@ class EtapaController extends Controller
      */
     public function index(Request $request)
     {
+        $request->validate([
+            'proceso_id' => 'nullable|integer',
+        ]);
         $lista = EtapaResource::collection((Etapa::where('proceso_id','=',$request->input('proceso_id'))->latest()->paginate()));
         return response()->json($lista);
     }
@@ -53,6 +56,14 @@ class EtapaController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'tipo' => 'nullable',
+            'fechainicio' => 'nullable|date',
+            'fechafin' => 'nullable|date',
+            'situacion' => 'nullable',
+            'proceso_id' => 'nullable|integer',
+            'etapa_id' => 'nullable|integer',
+        ]);
         $obj = Etapa::find($id);
         $obj->update($request->all());
         return response()->json($obj);

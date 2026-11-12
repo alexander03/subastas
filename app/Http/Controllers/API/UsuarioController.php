@@ -30,6 +30,19 @@ class UsuarioController extends Controller
      */
     public function store(Request $request)
     {
+        $request->validate([
+            'nombres' => 'nullable|string',
+            'apellidopaterno' => 'nullable|string',
+            'apellidomaterno' => 'nullable|string',
+            'dni' => 'nullable',
+            'telefono' => 'nullable',
+            'direccion' => 'nullable|string',
+            'distrito_id' => 'nullable|integer',
+            'fechanacimiento' => 'nullable|date',
+            'email' => 'required|email',
+            'password' => 'required|string',
+            'tipousuario_id' => 'nullable|integer',
+        ]);
         $obj = User::create($request->all());
         $obj = new UsuarioResource($obj);
         return response()->json($obj);
@@ -37,6 +50,19 @@ class UsuarioController extends Controller
 
     public function store2(Request $request)
     {
+        $request->validate([
+            'nombres' => 'nullable|string',
+            'apellidopaterno' => 'nullable|string',
+            'apellidomaterno' => 'nullable|string',
+            'dni' => 'nullable',
+            'telefono' => 'nullable',
+            'direccion' => 'nullable|string',
+            'distrito_id' => 'nullable|integer',
+            'fechanacimiento' => 'nullable|date',
+            'email' => 'required|email',
+            'password' => 'required|string',
+            'tipousuario_id' => 'nullable|integer',
+        ]);
         $obj = User::create($request->all());
         $obj = new UsuarioResource($obj);
         return response()->json($obj);

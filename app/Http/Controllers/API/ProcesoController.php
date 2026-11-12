@@ -174,6 +174,10 @@ class ProcesoController extends Controller
 
     public function obtenerGanadorProceso(Request $request)
     {
+        $request->validate([
+            'proceso_id' => 'nullable|integer',
+            'bien_id' => 'nullable|integer',
+        ]);
         $proceso_id = $request->input('proceso_id');
         $bien_id = $request->input('bien_id');
         $lista = Bien::where('situacion','like','F');
@@ -200,6 +204,14 @@ class ProcesoController extends Controller
     }
 
     public function obtenerFiltroWeb(Request $request){
+        $request->validate([
+            'modalidad' => 'nullable|string',
+            'categoria_id' => 'nullable|integer',
+            'provincia' => 'nullable|string',
+            'empresa_id' => 'nullable|integer',
+            'preciomin' => 'nullable|numeric',
+            'preciomax' => 'nullable|numeric',
+        ]);
         $lista = Proceso::join('biens','biens.proceso_id','=','procesos.id')
                 ->join('etapas','etapas.proceso_id','=','procesos.id')
                 ->join('productos','productos.id','=','biens.producto_id')
@@ -232,6 +244,11 @@ class ProcesoController extends Controller
     }
 
     public function obtenerProceso(Request $request){
+        // Solo documenta los parametros en Scramble; son opcionales para no cambiar el comportamiento actual.
+        $request->validate([
+            'proceso_id' => 'nullable|integer',
+            'bien_id' => 'nullable|integer',
+        ]);
         $lista = Proceso::join('biens','biens.proceso_id','=','procesos.id')
                 ->join('productos','productos.id','=','biens.producto_id')
                 //->where('biens.situacion','like','P')
@@ -250,6 +267,10 @@ class ProcesoController extends Controller
 
     public function listaPDF(Request $request)
     {
+        $request->validate([
+            'fechainicio' => 'nullable|date',
+            'fechafin' => 'nullable|date',
+        ]);
         $lista = Proceso::where('procesos.fechainicio','>=',$request->input('fechainicio'));
         if(!is_null($request->input('fechafin')) && !empty($request->input('fechafin'))){
             $lista = $lista->where('procesos.fechainicio','<=',$request->input('fechafin'));
@@ -269,6 +290,9 @@ class ProcesoController extends Controller
 
     public function listaBienesPDF(Request $request)
     {
+        $request->validate([
+            'proceso_id' => 'nullable|integer',
+        ]);
         $lista = Proceso::join('biens','biens.proceso_id','=','procesos.id')
                 ->join('productos','productos.id','=','biens.producto_id')
                 ->whereNull('productos.deleted_at');
@@ -290,6 +314,10 @@ class ProcesoController extends Controller
 
     public function listaParticipantesPDF(Request $request)
     {
+        $request->validate([
+            'proceso_id' => 'nullable|integer',
+            'bien_id' => 'nullable|integer',
+        ]);
         $proceso_id = $request->input('proceso_id');
         $bien_id = $request->input('bien_id');
         $lista = Proceso::join('biens','biens.proceso_id','=','procesos.id')
@@ -319,6 +347,10 @@ class ProcesoController extends Controller
 
     public function listaGanadorPDF(Request $request)
     {
+        $request->validate([
+            'proceso_id' => 'nullable|integer',
+            'bien_id' => 'nullable|integer',
+        ]);
         $proceso_id = $request->input('proceso_id');
         $bien_id = $request->input('bien_id');
         $lista = Proceso::join('biens','biens.proceso_id','=','procesos.id')

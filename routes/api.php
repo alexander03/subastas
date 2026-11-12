@@ -23,6 +23,7 @@ use App\Http\Controllers\API\ResetPasswordController;
 use App\Http\Controllers\BidController;
 use App\Http\Controllers\API\SliderController;
 use App\Http\Controllers\API\EmpresaController;
+use App\Http\Controllers\API\AccesoSubastaController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -65,6 +66,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('proceso/obtenerGanadorProceso', [ProcesoController::class,'obtenerGanadorProceso'])->name('proceso.obtenerGanadorProceso');
     Route::apiResource('inscripcion', InscripcionController::class);
     Route::post('actualizar-inscripcion/{id}',[InscripcionController::class,'actualizar']);
+    Route::post('inscripcion/{id}/notificar',[InscripcionController::class,'notificar'])->middleware('throttle:10,1')->name('inscripcion.notificar');
     Route::apiResource('bases', BasesController::class);
 
     Route::apiResource('bids', BidController::class);
@@ -76,6 +78,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('contacto', ContactoController::class);
 });
 Route::apiResource('usuario', UsuarioController::class);
+Route::get('subasta/verificarAcceso',[AccesoSubastaController::class,'verificar'])->name('subasta.verificarAcceso');
+Route::get('instrucciones',[AccesoSubastaController::class,'instrucciones'])->name('instrucciones');
 Route::get('distrito',[UbigeoController::class,'distrito']);
 Route::get('provincia',[UbigeoController::class,'provincia']);
 Route::get('departamento',[UbigeoController::class,'departamento']);

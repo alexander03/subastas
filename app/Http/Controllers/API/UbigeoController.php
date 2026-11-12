@@ -42,6 +42,9 @@ class UbigeoController extends Controller
      */
     public function distrito(Request $request)
     {
+        $request->validate([
+            'provincia_id' => 'nullable|string',
+        ]);
         $obj = Distrito::where('province_id','=',$request->input('provincia_id'))->orderBy('name')->get();
         return DistritoResource::collection($obj);
     }
@@ -54,6 +57,9 @@ class UbigeoController extends Controller
      */
     public function provincia(Request $request)
     {
+        $request->validate([
+            'departamento_id' => 'nullable|string',
+        ]);
         $obj = Provincia::where('department_id','=',$request->input('departamento_id'))->orderBy('name')->get();
         return ProvinciaResource::collection($obj);
     }

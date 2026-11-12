@@ -78,6 +78,10 @@ class TipousuarioController extends Controller
 
     public function acceso(Request $request)
     {
+        $request->validate([
+            'id' => 'required|integer',
+            'accesos' => 'required',
+        ]);
         $obj = Tipousuario::find($request->input('id'));
         $lista = Acceso::where('tipousuario_id','=',$obj->id)->get();
         if(count($lista)>0){

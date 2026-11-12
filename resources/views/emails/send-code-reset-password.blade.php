@@ -1,10 +1,11 @@
 @component('mail::message')
-<h1>Hemos recibido su solicitud para restablecer la contraseña de su cuenta</h1>
-<p>Puede utilizar el siguiente código para recuperar su cuenta</p>
+# Restablezca su contraseña.
 
-@component('mail::panel')
+<p class="lead">Ingrese este código en la plataforma para crear una nueva contraseña.</p>
+
+@component('mail::codigo', ['etiqueta' => 'Su código de verificación'])
 {{ $code }}
 @endcomponent
 
-<p>La duración permitida del código es de una hora desde el envío del mensaje</p>
+<p class="sub">El código vence en una hora. Si usted no solicitó este cambio, ignore este mensaje: su contraseña no cambiará.</p>
 @endcomponent

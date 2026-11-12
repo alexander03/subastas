@@ -17,6 +17,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Marca y enlace al front (correos)
+    |--------------------------------------------------------------------------
+    |
+    | Nombre que se muestra en la cabecera de los correos y URL de la
+    | plataforma web a la que apuntan los botones.
+    |
+    */
+
+    'brand' => env('MAIL_BRAND_NAME', 'Subasta Perú'),
+
+    'front_url' => env('FRONT_URL', env('APP_URL', 'http://localhost')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

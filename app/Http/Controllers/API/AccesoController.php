@@ -16,6 +16,9 @@ class AccesoController extends Controller
      */
     public function index(Request $request)
     {
+        $request->validate([
+            'tipousuario_id' => 'nullable|integer',
+        ]);
         $lista = AccesoResource::collection((Acceso::where('tipousuario_id',$request->input('tipousuario_id'))->latest()->paginate()));
         return response()->json($lista);
     }

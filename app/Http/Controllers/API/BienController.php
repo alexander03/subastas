@@ -19,6 +19,9 @@ class BienController extends Controller
      */
     public function index(Request $request)
     {
+        $request->validate([
+            'proceso_id' => 'nullable|integer',
+        ]);
         $lista = BienResource::collection((Bien::where('proceso_id', '=', $request->input('proceso_id'))->latest()->paginate()));
         return response()->json($lista);
     }
@@ -58,6 +61,17 @@ class BienController extends Controller
      */
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'situacion' => 'nullable|string|in:P,E,F',
+            'valorreferencia' => 'nullable|numeric',
+            'garantia' => 'nullable|numeric',
+            'proceso_id' => 'nullable|integer',
+            'producto_id' => 'nullable|integer',
+            'bid_id' => 'nullable|integer',
+            'segundoactual' => 'nullable|integer',
+            'fechainicio' => 'nullable|date',
+            'fechafin' => 'nullable|date',
+        ]);
         $obj = Bien::find($id);
         $obj->update($request->all());
         return response()->json($obj);
@@ -81,6 +95,9 @@ class BienController extends Controller
     }
 
     public function empezarSubasta(Request $request){
+        $request->validate([
+            'bien_id' => 'required|integer',
+        ]);
         $bien_id = $request->input('bien_id');
         $bien = Bien::find($bien_id);
         if(is_null($bien->proceso->tiempo)){
@@ -103,6 +120,9 @@ class BienController extends Controller
     }
 
     public function empezarSubastaManual(Request $request){
+        $request->validate([
+            'bien_id' => 'required|integer',
+        ]);
         $bien_id = $request->input('bien_id');
         $bien = Bien::find($bien_id);
         if($bien->situacion=='P'){
@@ -121,6 +141,9 @@ class BienController extends Controller
     }
 
     public function contadorSubastaManual(Request $request){
+        $request->validate([
+            'bien_id' => 'required|integer',
+        ]);
         $bien_id = $request->input('bien_id');
         $bien = Bien::find($bien_id);
         if($bien->situacion=='E'){
@@ -137,6 +160,9 @@ class BienController extends Controller
     }
 
     public function finalizarSubastaManual(Request $request){
+        $request->validate([
+            'bien_id' => 'required|integer',
+        ]);
         $bien_id = $request->input('bien_id');
         $bien = Bien::find($bien_id);
         if($bien->situacion=='E'){

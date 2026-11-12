@@ -1,0 +1,401 @@
+/*
+ * Tema de correo - Subasta Perú (estilo editorial, sin tarjetas)
+ * Marino #002E71 (identidad y botón), naranja #C2570C (solo el dato clave),
+ * texto #1D1D1F, secundario #6E6E73, línea fina #E5E5EA, pie #F5F5F7.
+ */
+
+/* Base */
+
+body,
+body *:not(html):not(style):not(br):not(tr):not(code) {
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    position: relative;
+}
+
+body {
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: none;
+    background-color: #ffffff;
+    color: #1d1d1f;
+    height: 100%;
+    line-height: 1.47;
+    margin: 0;
+    padding: 0;
+    width: 100% !important;
+}
+
+p,
+ul,
+ol,
+blockquote {
+    line-height: 1.47;
+    text-align: left;
+}
+
+a {
+    color: #002e71;
+}
+
+a img {
+    border: none;
+}
+
+/* Typography */
+
+h1 {
+    color: #1d1d1f;
+    font-size: 34px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+    line-height: 1.12;
+    margin: 0 0 14px;
+    text-align: left;
+}
+
+h2 {
+    color: #1d1d1f;
+    font-size: 21px;
+    font-weight: 600;
+    margin-top: 0;
+    text-align: left;
+}
+
+h3 {
+    color: #1d1d1f;
+    font-size: 17px;
+    font-weight: 600;
+    margin-top: 0;
+    text-align: left;
+}
+
+p {
+    color: #1d1d1f;
+    font-size: 17px;
+    line-height: 1.47;
+    margin: 0 0 18px;
+    text-align: left;
+}
+
+p.lead {
+    color: #6e6e73;
+    font-size: 19px;
+    line-height: 1.42;
+    margin-bottom: 32px;
+}
+
+p.sub {
+    color: #6e6e73;
+    font-size: 14px;
+    line-height: 1.45;
+    margin: 0;
+    padding-top: 28px;
+}
+
+strong {
+    font-weight: 600;
+}
+
+img {
+    max-width: 100%;
+}
+
+/* Layout */
+
+.wrapper {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    background-color: #ffffff;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.content {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.inner-body {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 600px;
+    background-color: #ffffff;
+    margin: 0 auto;
+    padding: 0;
+    width: 600px;
+}
+
+.content-cell {
+    max-width: 100vw;
+    padding: 0 32px 56px;
+}
+
+/* Cabecera: solo el logo, alineado a la izquierda */
+
+.header {
+    padding: 44px 32px 40px;
+    text-align: left;
+}
+
+.logo {
+    border: 0;
+    display: block;
+    height: 35px;
+    width: 128px;
+}
+
+.logo-dark {
+    display: none;
+    max-height: 0;
+    mso-hide: all;
+    overflow: hidden;
+}
+
+/* Subcopy */
+
+.subcopy {
+    border-top: 1px solid #e5e5ea;
+    margin-top: 24px;
+    padding-top: 24px;
+}
+
+.subcopy p {
+    color: #6e6e73;
+    font-size: 14px;
+}
+
+/* Pie: banda gris del mismo ancho que el contenido */
+
+.footer {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 600px;
+    margin: 0 auto;
+    padding: 0;
+    text-align: left;
+    width: 600px;
+}
+
+.footer-pad {
+    padding: 0 32px 48px;
+}
+
+.footer-band {
+    background-color: #f5f5f7;
+    border-collapse: separate;
+    border-radius: 16px;
+    width: 100%;
+}
+
+.footer-cell {
+    padding: 22px 24px 18px;
+}
+
+.footer p {
+    color: #6e6e73;
+    font-size: 12px;
+    line-height: 1.5;
+    margin: 0 0 6px;
+    text-align: left;
+}
+
+.footer a {
+    color: #6e6e73;
+    text-decoration: underline;
+}
+
+/* Tables (markdown) */
+
+.table table {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    margin: 24px auto;
+    width: 100%;
+}
+
+.table th {
+    border-bottom: 1px solid #e5e5ea;
+    color: #6e6e73;
+    font-weight: 400;
+    margin: 0;
+    padding-bottom: 8px;
+}
+
+.table td {
+    color: #1d1d1f;
+    font-size: 15px;
+    line-height: 18px;
+    margin: 0;
+    padding: 10px 0;
+}
+
+/* Botón: píldora marino */
+
+.action {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    margin: 32px 0 0;
+    padding: 0;
+    text-align: left;
+    width: 100%;
+}
+
+.button {
+    -webkit-text-size-adjust: none;
+    border-radius: 980px;
+    color: #ffffff;
+    display: inline-block;
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1;
+    padding: 14px 28px;
+    text-decoration: none;
+}
+
+.button-blue,
+.button-primary {
+    background-color: #002e71;
+    color: #ffffff;
+}
+
+.button-green,
+.button-success {
+    background-color: #15803d;
+    color: #ffffff;
+}
+
+.button-red,
+.button-error {
+    background-color: #b91c1c;
+    color: #ffffff;
+}
+
+/* Datos: pares etiqueta / valor separados por línea fina */
+
+.datos {
+    border-collapse: collapse;
+    margin: 0 0 8px;
+    width: 100%;
+}
+
+.dato-etiqueta {
+    border-top: 1px solid #e5e5ea;
+    color: #6e6e73;
+    font-size: 15px;
+    line-height: 1.4;
+    padding: 14px 16px 14px 0;
+    text-align: left;
+    vertical-align: top;
+    width: 34%;
+}
+
+.dato-valor {
+    border-top: 1px solid #e5e5ea;
+    color: #1d1d1f;
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.4;
+    padding: 14px 0;
+    text-align: left;
+    vertical-align: top;
+    word-break: break-word;
+}
+
+.dato-ultima {
+    border-bottom: 1px solid #e5e5ea;
+}
+
+/* Aviso: texto llano con encabezado naranja, sin recuadro */
+
+.aviso {
+    border-collapse: collapse;
+    margin: 28px 0 0;
+    width: 100%;
+}
+
+.aviso-celda {
+    padding: 0;
+}
+
+.aviso-titulo {
+    color: #c2570c;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0 0 4px;
+}
+
+.aviso-texto {
+    color: #1d1d1f;
+    font-size: 17px;
+    line-height: 1.47;
+    margin: 0;
+}
+
+/* Código de verificación */
+
+.codigo {
+    border-collapse: collapse;
+    margin: 0 0 8px;
+    width: 100%;
+}
+
+.codigo-celda {
+    padding: 4px 0 0;
+    text-align: left;
+}
+
+.codigo-etiqueta {
+    color: #6e6e73;
+    font-size: 15px;
+    margin: 0 0 4px;
+    text-align: left;
+}
+
+.codigo-valor {
+    color: #c2570c;
+    font-size: 52px;
+    font-weight: 600;
+    letter-spacing: 6px;
+    line-height: 1.1;
+    margin: 0;
+    text-align: left;
+}
+
+/* Panels (compat. con el componente estándar) */
+
+.panel {
+    margin: 20px 0;
+}
+
+.panel-content {
+    color: #1d1d1f;
+    padding: 0;
+}
+
+.panel-content p {
+    color: #1d1d1f;
+}
+
+.panel-item {
+    padding: 0;
+}
+
+.panel-item p:last-of-type {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Utilities */
+
+.break-all {
+    word-break: break-all;
+}

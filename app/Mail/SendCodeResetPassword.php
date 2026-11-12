@@ -9,7 +9,7 @@ use Illuminate\Queue\SerializesModels;
 
 class SendCodeResetPassword extends Mailable
 {
-    use Queueable, SerializesModels;
+    use Queueable, SerializesModels, ConLogo;
 
     public $code;
     /**
@@ -29,6 +29,8 @@ class SendCodeResetPassword extends Mailable
      */
     public function build()
     {
-        return $this->markdown('emails.send-code-reset-password');
+        return $this->conLogo()
+            ->subject('Su código para restablecer la contraseña')
+            ->markdown('emails.send-code-reset-password');
     }
 }
