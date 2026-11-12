@@ -1,20 +1,81 @@
-# Cambios solicitados: Subasta Perú (backend)
-
-Estado: implementado y probado con tests automáticos (25 tests). Falta desplegar en `develop.garzasoft.com` y configurar el correo en ese servidor.
+# Consultas y observaciones: respuesta punto por punto
 
 Documentación interactiva de la API (Scramble): `/docs/api`.
 
 ## Resumen
 
-| # | Cambio solicitado | Estado | Dónde |
+| # | Consulta / observación | Respuesta | API |
 |---|---|---|---|
-| 1 | Notificación de participantes pendientes de aprobación | Hecho | Correo a la empresa organizadora al inscribirse |
-| 2 | Recordatorio para subir voucher de pago | Hecho | Voucher obligatorio + aviso en el correo al participante |
-| 3 | Restringir acceso después de iniciada la subasta | Hecho | `GET /api/subasta/verificarAcceso` |
-| 4 | No permitir inscripciones fuera del horario | Hecho | `POST /api/inscripcion` responde 422 |
-| 5 | Apartado de instrucciones o manual de usuario | Hecho | `GET /api/instrucciones` y `/manual-usuario` |
+| 1 | Tipo de usuario y accesos | Solucionado | Sin cambios |
+| 2 | Notificación de participantes pendientes | Implementado (correo) | `POST /api/inscripcion` y **nueva** `POST /api/inscripcion/{id}/notificar` |
+| 3 | Recordatorio del voucher de pago | Implementado | Sin API nueva |
+| 4 | Restringir acceso tras iniciada la subasta | Implementado | **Nueva** `GET /api/subasta/verificarAcceso` |
+| 5 | Listado de pujas | Solucionado | Sin cambios |
+| 6 | Inscripciones fuera de horario | Implementado | Sin API nueva |
+| 7 | Mostrar ganador al finalizar | Solucionado | Sin cambios |
+| 8 | Instrucciones / manual de usuario | Implementado | **Nuevas** `GET /api/instrucciones` y `GET /manual-usuario` |
+| 9 | Correo de destino de "Contacto" | Por confirmar | Sin cambios |
 
-## ¿La subasta cambia de estado cuando inicia?
+---
+
+## 1. Tipo de usuario y accesos (Solucionado)
+
+La cuenta registrada con `tipousuario_id: 2` puede inscribirse y participar en las etapas del proceso.
+
+- API: `POST /api/usuario`. No hay cambios.
+- El backend no asigna el tipo por defecto: lo envía el front en el registro.
+
+## 2. Notificación de participantes pendientes de aprobación
+
+No se creó una API de notificaciones. Se resolvió con correo, como propone el documento.
+
+Al crear una inscripción se envían dos correos:
+
+- **A la empresa organizadora** (`empresa.email` del proceso): "Participante pendiente de aprobación", con los datos del participante, el proceso, el bien y un aviso para revisar el voucher. Si la empresa no tiene email, se usa el remitente configurado (`MAIL_FROM_ADDRESS`).
+- **Al participante**: "Inscripción recibida", con el estado pendiente y el recordatorio del voucher.
+
+Un fallo al enviar correo no rompe la inscripción: queda un aviso en `storage/logs/laravel.log`.
+
+### El envío al crear es opcional
+
+`POST /api/inscripcion` acepta el campo `notificar`:
+
+| Valor | Resultado |
+|---|---|
+| No se envía, o `true` | Se envían los 2 correos (comportamiento por defecto) |
+| `false` | Se crea la inscripción y no se envía ningún correo |
+
+Acepta `true`/`false` y `1`/`0`, también en multipart. Un valor inválido responde 422.
+
+### API nueva: enviar o reenviar el aviso al organizador
+
+`POST /api/inscripcion/{id}/notificar` (requiere token, sin body)
+
+Envía solo el correo "Participante pendiente de aprobación" al organizador. No envía nada al participante. Máximo 10 envíos por minuto.
+
+| Caso | Respuesta |
+|---|---|
+| Enviado | 200 `{"message": "Notificación enviada.", "destinatario": "..."}` |
+| La inscripción no existe | 404 |
+| La inscripción ya no está pendiente (aprobada o rechazada) | 422 |
+| La empresa no tiene email y no hay remitente configurado | 422 |
+| Falla el envío (SMTP) | 500 con mensaje |
+
+### Correo de destino
+
+El documento habla del "correo con el que se registró la cuenta": es el correo de la empresa del proceso. El aviso se envía al `email` de la empresa (`empresa.email`) asociada al proceso del bien. Por eso cada empresa debe tener su email cargado.
+
+## 3. Recordatorio para subir voucher de pago
+
+- `POST /api/inscripcion` sin voucher responde **422**: "Debe subir su voucher de pago. Sin este documento no se puede aprobar su inscripción."
+- El voucher va en el campo `image`. Formatos: jpg, jpeg, png, webp o pdf, hasta 5 MB.
+- `POST /api/actualizar-inscripcion/{id}` con `situacion=A` y sin voucher responde **422**: "No se puede aprobar la inscripción: el participante no ha subido su voucher de pago."
+- El correo "Inscripción recibida" también le recuerda al participante que el voucher es obligatorio.
+- El voucher es obligatorio para enviar la inscripción. Aprobarla es un paso aparte que hace el organizador.
+
+## 4. Restringir acceso después de iniciada la subasta
+
+### ¿La subasta cambia de estado cuando inicia?
 
 Sí. Cada bien tiene `situacion`:
 
@@ -24,29 +85,11 @@ Sí. Cada bien tiene `situacion`:
 | `E` | En subasta |
 | `F` | Finalizada |
 
-Se ve en `obtenerProceso` dentro de `bienes[].situacion`.
+Se ve en `obtenerProceso`, dentro de `bienes[].situacion`.
 
-**Importante:** el cambio no ocurre solo por la hora. Pasa de `P` a `E` cuando se llama a `POST /api/bien/empezarSubasta` (o a `empezarSubastaManual`), y de `E` a `F` al finalizar. Si nadie la inicia, el bien sigue en `P` aunque ya haya pasado la hora de inicio.
+El cambio no ocurre solo por la hora. Pasa de `P` a `E` cuando se llama a `POST /api/bien/empezarSubasta` (o a `empezarSubastaManual`), y de `E` a `F` al finalizar. Si nadie la inicia, el bien sigue en `P` aunque ya haya pasado la hora de inicio. Por eso el front no debe depender solo de ese campo.
 
-Por eso el front no debe depender solo de ese campo: debe usar `verificarAcceso`, que revisa el estado y también la hora.
-
-## 1. Notificación de participantes pendientes
-
-Al crear una inscripción se envían dos correos:
-
-- **A la empresa organizadora** (`empresa.email` del proceso): "Participante pendiente de aprobación", con los datos del participante, el proceso, el bien y un aviso para revisar el voucher. Si la empresa no tiene email, se usa el remitente configurado (`MAIL_FROM_ADDRESS`).
-- **Al participante**: "Inscripción recibida", con el estado pendiente y el recordatorio del voucher.
-
-Un fallo al enviar correo no rompe la inscripción: queda un aviso en `storage/logs/laravel.log`.
-
-## 2. Voucher de pago obligatorio
-
-- `POST /api/inscripcion` sin voucher responde **422**: "Debe subir su voucher de pago. Sin este documento no se puede aprobar su inscripción."
-- El voucher va en el campo `image`. Formatos: jpg, jpeg, png, webp o pdf, hasta 5 MB.
-- `POST /api/actualizar-inscripcion/{id}` con `situacion=A` y sin voucher responde **422**: "No se puede aprobar la inscripción: el participante no ha subido su voucher de pago."
-- El voucher es obligatorio para **enviar** la inscripción. Aprobarla es un paso aparte, que hace el organizador.
-
-## 3. Restringir acceso después de iniciada la subasta
+### API nueva
 
 `GET /api/subasta/verificarAcceso?bien_id=125` (pública)
 
@@ -62,9 +105,13 @@ Devuelve `puede_ingresar: false` con su `motivo` cuando:
 | El bien está en `F` | La subasta ya finalizó. |
 | Ya pasó la hora de inicio (etapa tipo 3) | La hora de inicio de la subasta ya pasó. No se permite el ingreso. |
 
-Errores: sin `bien_id` responde 422; con un bien inexistente responde 404.
+Sin `bien_id` responde 422. Con un bien inexistente responde 404.
 
-## 4. Inscripciones solo dentro del horario
+## 5. Listado de pujas (Solucionado)
+
+Ya se visualizan. API: `GET /api/bids?bien_id=`. No hay cambios.
+
+## 6. No permitir inscripciones fuera del horario
 
 `POST /api/inscripcion` revisa la etapa de inscripción (tipo `1`) del proceso:
 
@@ -76,10 +123,25 @@ Errores: sin `bien_id` responde 422; con un bien inexistente responde 404.
 
 Si el proceso no tiene etapa de inscripción, no se restringe.
 
-## 5. Instrucciones / manual de usuario
+## 7. Mostrar ganador al finalizar (Solucionado)
+
+Al finalizar, se muestra el ganador. No hay cambios.
+
+- `POST /api/proceso/obtenerGanadorProceso` (body: `proceso_id`, `bien_id`).
+- `GET /api/procesosListaGanadoresPDF`, para el PDF.
+
+## 8. Instrucciones o manual de usuario
 
 - `GET /api/instrucciones` (pública): devuelve `manual_url` y 6 `pasos` (`titulo` y `detalle`).
 - `GET /manual-usuario`: página web con el manual.
+
+## 9. Correo de destino de "Contacto"
+
+`POST /api/contacto/guardar` solo guarda el mensaje en la tabla de contactos. El backend no envía ningún correo, y `atencionalcliente@garzasoft.com` no está configurado en el proyecto. Si ese envío funciona, lo hace otro componente (por ejemplo el front).
+
+Si se quiere que el backend envíe el correo de contacto, es un cambio pequeño: hay que indicar el correo de destino.
+
+---
 
 ## Cómo inscribirse (referencia para el front)
 
@@ -93,6 +155,7 @@ Si el proceso no tiene etapa de inscripción, no se restringe.
 | `etapa_id` | No | Si falta, se usa la etapa de inscripción del proceso |
 | `fecha` | No | Si falta, la fecha de hoy |
 | `monto`, `facturacion`, `comentario` | No | |
+| `notificar` | No | `false` para no enviar correos al crear |
 
 La inscripción siempre queda en `situacion = P` (pendiente). Aunque se envíe `A` o `R`, se ignora: solo el organizador aprueba.
 
@@ -103,10 +166,17 @@ La inscripción siempre queda en `situacion = P` (pendiente). Aunque se envíe `
 - Enviar el voucher como `image` (multipart).
 - Mostrar las instrucciones desde `/api/instrucciones` o enlazar `manual_url`.
 
-## Pendiente
+## A verificar
 
-- Desplegar en `develop.garzasoft.com`.
-- Configurar el correo en ese servidor: `MAIL_FROM_ADDRESS` (hoy está en `null` y sin remitente no se envía nada), el SMTP real y `FRONT_URL`.
-- Confirmar que las empresas tengan su email cargado (a él llega el aviso de pendientes).
-- Confirmar que la etapa tipo `1` sea inscripción y la tipo `3` sea la subasta.
-- El formulario de contacto (`ContactoController::store`) solo guarda en base de datos y no envía correo, aunque en el documento original figuraba como "Verificado".
+- Las empresas existentes que no tengan email: ahora es obligatorio al crear o editar una empresa (`POST /api/empresa` y `PUT /api/empresa/{id}`), pero las que ya estaban creadas sin email hay que completarlas. A ese correo llega el aviso de pendientes.
+## Etapas del proceso (revisado en la base de datos)
+
+Cada proceso tiene 4 etapas (`tipo` 1 a 4), una de cada una, y ningún proceso carece de la tipo 1 ni de la tipo 3.
+
+| Tipo | Uso en esta implementación | Evidencia |
+|---|---|---|
+| `1` | Inscripción | Es la etapa que abre primero y con la ventana más amplia; siempre empieza antes que las demás |
+| `3` | Subasta | El sistema ya la usa como la etapa de subasta para ordenar y filtrar procesos (`procesosFiltroWeb`, `procesosUltimos` y sliders) |
+| `2` y `4` | No se usan en estos cambios | |
+
+La base no guarda un nombre por tipo, así que esta equivalencia se deduce del orden de las fechas y del uso que ya hace el sistema.

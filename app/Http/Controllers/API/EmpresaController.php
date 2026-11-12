@@ -37,6 +37,9 @@ class EmpresaController extends Controller
         $data = $request->validate([
             'ruc' => 'required|unique:empresas,ruc,NULL,id,deleted_at,NULL',
             'razonsocial' => 'required',
+            'email' => 'required|email',
+            'direccion' => 'nullable|string',
+            'telefono' => 'nullable',
         ]);
         $obj = Empresa::create($request->all());
         return response()->json($obj);
@@ -70,6 +73,9 @@ class EmpresaController extends Controller
         $data = $request->validate([
             'ruc' => 'required|unique:empresas,ruc,'.$id.',id,deleted_at,NULL',
             'razonsocial' => 'required',
+            'email' => 'required|email',
+            'direccion' => 'nullable|string',
+            'telefono' => 'nullable',
         ]);
 
         $obj->update($request->all());
