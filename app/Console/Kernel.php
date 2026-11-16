@@ -16,6 +16,12 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+
+        // Todos los días: avisa de las inscripciones pendientes cuando faltan 3 días para que cierre la inscripción.
+        $schedule->command('inscripciones:avisar-cierre --dias=3')
+            ->dailyAt('08:00')
+            ->timezone('America/Lima')
+            ->withoutOverlapping();
     }
 
     /**

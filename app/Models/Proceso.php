@@ -47,7 +47,7 @@ class Proceso extends Model implements HasMedia
     }
 
     /**
-     * Etapas: 1 = Inscripción, 3 = Subasta.
+     * Etapas: 2 = Inscripción, 3 = Proceso Subasta, 4 = Publicación Ganadores.
      */
     public function etapaPorTipo($tipo)
     {
