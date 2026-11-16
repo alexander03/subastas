@@ -167,7 +167,12 @@ class InscripcionController extends Controller
             Mail::to($destino)->send(new InscripcionPendienteMail($inscripcion));
         } catch (\Throwable $e) {
             Log::warning('No se pudo enviar la notificación de inscripción pendiente: ' . $e->getMessage());
-            return response()->json(['message' => 'No se pudo enviar el correo. Intente nuevamente.'], 500);
+            return response()->json([
+                'message' => 'No se pudo enviar el correo. Intente nuevamente.',
+                'error' => $e->getMessage(),
+                'exception' => get_class($e),
+                'file' => $e->getFile() . ':' . $e->getLine(),
+            ], 500);
         }
 
         return response()->json(['message' => 'Notificación enviada.', 'destinatario' => $destino]);
