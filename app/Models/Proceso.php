@@ -62,7 +62,7 @@ class Proceso extends Model implements HasMedia
      */
     public function estadoInscripcion()
     {
-        $etapa = $this->etapaPorTipo('1');
+        $etapa = $this->etapaPorTipo('2');
         if (is_null($etapa)) {
             return 'abierta';
         }

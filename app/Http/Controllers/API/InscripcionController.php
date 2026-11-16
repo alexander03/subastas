@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\InscripcionPendienteMail;
 use App\Mail\InscripcionRecibidaMail;
+use App\Mail\VoucherPendienteMail;
 
 class InscripcionController extends Controller
 {
@@ -63,13 +64,7 @@ class InscripcionController extends Controller
      */
     public function store(Request $request)
     {
-        // "notificar" llega como texto en multipart ("true"/"false"/"1"/"0"): se normaliza a booleano.
-        if (!is_null($request->input('notificar'))) {
-            $notificar = filter_var($request->input('notificar'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-            if (!is_null($notificar)) {
-                $request->merge(['notificar' => $notificar]);
-            }
-        }
+        $this->normalizarNotificar($request);
 
         $request->validate([
             // Si es false no se envía ningún correo al crear (se puede enviar luego con /inscripcion/{id}/notificar). Por defecto: true.
@@ -107,7 +102,7 @@ class InscripcionController extends Controller
 
         // Datos que la BD exige y el participante no debe decidir:
         // toda inscripción nueva nace pendiente (solo el organizador la aprueba).
-        $etapaInscripcion = $bienInscrito->proceso->etapaPorTipo('1');
+        $etapaInscripcion = $bienInscrito->proceso->etapaPorTipo('2');
         $datos = $request->except(['image', 'situacion', 'notificar']);
         $datos['situacion'] = 'P';
         $datos['fecha'] = $request->input('fecha') ?: now()->toDateString();
@@ -136,11 +131,48 @@ class InscripcionController extends Controller
             $obj->load(['media']);
         });
 
-        if ($request->boolean('notificar', true)) {
+        if ($this->quiereNotificar($request)) {
             $this->enviarNotificaciones($obj);
         }
 
         return response()->json($obj);
+    }
+
+    /**
+     * "notificar" llega como texto en multipart ("true"/"false"/"1"/"0"): se normaliza a booleano.
+     * Un valor inválido se deja tal cual para que la validación lo rechace.
+     */
+    private function normalizarNotificar(Request $request)
+    {
+        if (!is_null($request->input('notificar'))) {
+            $valor = filter_var($request->input('notificar'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if (!is_null($valor)) {
+                $request->merge(['notificar' => $valor]);
+            }
+        }
+    }
+
+    private function quiereNotificar(Request $request)
+    {
+        return $request->boolean('notificar', true);
+    }
+
+    /**
+     * Avisa a la empresa organizadora que hay un participante por aprobar.
+     * Un fallo de correo no debe romper la operación principal.
+     */
+    private function avisarAlOrganizador(Inscripcion $inscripcion)
+    {
+        try {
+            $inscripcion->load(['usuario', 'bien.proceso.empresa', 'bien.producto']);
+            $empresa = optional(optional($inscripcion->bien)->proceso)->empresa;
+            $destino = optional($empresa)->email ?: config('mail.from.address');
+            if (!empty($destino)) {
+                Mail::to($destino)->send(new InscripcionPendienteMail($inscripcion));
+            }
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo avisar al organizador del voucher: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -159,14 +191,28 @@ class InscripcionController extends Controller
         }
 
         $inscripcion->load(['usuario', 'bien.proceso.empresa', 'bien.producto']);
-        $empresa = optional(optional($inscripcion->bien)->proceso)->empresa;
-        $destino = optional($empresa)->email ?: config('mail.from.address');
+
+        // Sin voucher no hay nada que aprobar: se le recuerda al participante que lo suba.
+        // Con voucher, se avisa al organizador que hay un participante por aprobar.
+        $sinVoucher = $inscripcion->getMedia('images')->isEmpty();
+        if ($sinVoucher) {
+            $destino = optional($inscripcion->usuario)->email;
+            $tipo = 'recordatorio_voucher';
+            $mailable = new VoucherPendienteMail($inscripcion);
+            $sinDestino = 'No hay un correo de destino: el participante no tiene email.';
+        } else {
+            $empresa = optional(optional($inscripcion->bien)->proceso)->empresa;
+            $destino = optional($empresa)->email ?: config('mail.from.address');
+            $tipo = 'pendiente_aprobacion';
+            $mailable = new InscripcionPendienteMail($inscripcion);
+            $sinDestino = 'No hay un correo de destino: la empresa del proceso no tiene email.';
+        }
         if (empty($destino)) {
-            return response()->json(['message' => 'No hay un correo de destino: la empresa del proceso no tiene email.'], 422);
+            return response()->json(['message' => $sinDestino], 422);
         }
 
         try {
-            Mail::to($destino)->send(new InscripcionPendienteMail($inscripcion));
+            Mail::to($destino)->send($mailable);
         } catch (\Throwable $e) {
             Log::warning('No se pudo enviar la notificación de inscripción pendiente: ' . $e->getMessage());
             return response()->json([
@@ -177,7 +223,7 @@ class InscripcionController extends Controller
             ], 500);
         }
 
-        return response()->json(['message' => 'Notificación enviada.', 'destinatario' => $destino]);
+        return response()->json(['message' => 'Notificación enviada.', 'tipo' => $tipo, 'destinatario' => $destino]);
     }
 
     /**
@@ -223,6 +269,8 @@ class InscripcionController extends Controller
      */
     public function actualizar($id, Request $request)
     {
+        $this->normalizarNotificar($request);
+
         $request->validate([
             'situacion' => 'nullable|string|in:P,A,R',
             'comentario' => 'nullable|string',
@@ -233,9 +281,12 @@ class InscripcionController extends Controller
             'bien_id' => 'nullable|integer',
             'usuario_id' => 'nullable|integer',
             'image' => 'nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            // Si es false, al subir el voucher no se avisa al organizador. Por defecto: true.
+            'notificar' => 'nullable|boolean',
         ]);
 
         $obj = Inscripcion::find($id);
+        $teniaVoucher = $obj->getMedia('images')->isNotEmpty();
 
         // No se puede aprobar una inscripción sin voucher de pago
         if (
@@ -252,6 +303,11 @@ class InscripcionController extends Controller
             $obj->clearMediaCollection('images');
             $obj->addMediaFromRequest('image')->toMediaCollection('images');
             $obj->save();
+
+            // Primer voucher de una inscripción pendiente: se avisa al organizador que ya hay algo que revisar.
+            if (!$teniaVoucher && $obj->situacion === 'P' && $this->quiereNotificar($request)) {
+                $this->avisarAlOrganizador($obj);
+            }
         }
 
         $obj->load(['media']);

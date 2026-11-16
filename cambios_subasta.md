@@ -47,18 +47,33 @@ Un fallo al enviar correo no rompe la inscripción: queda un aviso en `storage/l
 
 Acepta `true`/`false` y `1`/`0`, también en multipart. Un valor inválido responde 422.
 
+### Al subir el voucher después de inscribirse
+
+`POST /api/actualizar-inscripcion/{id}` con `image`: si la inscripción estaba pendiente y **no tenía voucher**, al subirlo se envía a la empresa organizadora el correo "Participante pendiente de aprobación", porque ya hay algo que revisar.
+
+- Solo avisa con el **primer** voucher. Si el participante lo reemplaza, no se vuelve a enviar.
+- Acepta el mismo campo opcional `notificar=false` para no enviar.
+- Si la inscripción se creó con voucher, el aviso ya salió al crearla.
+
 ### API nueva: enviar o reenviar el aviso al organizador
 
 `POST /api/inscripcion/{id}/notificar` (requiere token, sin body)
 
-Envía solo el correo "Participante pendiente de aprobación" al organizador. No envía nada al participante. Máximo 10 envíos por minuto.
+Según el estado del voucher de esa inscripción, envía un solo correo:
+
+| La inscripción... | Correo | Destinatario | `tipo` en la respuesta |
+|---|---|---|---|
+| **No tiene voucher** | "Suba su voucher de pago" (recordatorio) | El participante | `recordatorio_voucher` |
+| **Tiene voucher** | "Participante pendiente de aprobación" | La empresa organizadora (`empresa.email`) | `pendiente_aprobacion` |
+
+Máximo 10 envíos por minuto.
 
 | Caso | Respuesta |
 |---|---|
-| Enviado | 200 `{"message": "Notificación enviada.", "destinatario": "..."}` |
+| Enviado | 200 `{"message": "Notificación enviada.", "tipo": "...", "destinatario": "..."}` |
 | La inscripción no existe | 404 |
 | La inscripción ya no está pendiente (aprobada o rechazada) | 422 |
-| La empresa no tiene email y no hay remitente configurado | 422 |
+| No hay destinatario (el participante o la empresa sin email, y sin remitente configurado) | 422 |
 | Falla el envío (SMTP) | 500 con mensaje |
 
 ### Correo de destino
@@ -113,7 +128,7 @@ Ya se visualizan. API: `GET /api/bids?bien_id=`. No hay cambios.
 
 ## 6. No permitir inscripciones fuera del horario
 
-`POST /api/inscripcion` revisa la etapa de inscripción (tipo `1`) del proceso:
+`POST /api/inscripcion` revisa la etapa de inscripción (tipo `2`, "Inscripción" en el formulario de etapas) del proceso:
 
 | Caso | Respuesta |
 |---|---|
@@ -169,14 +184,16 @@ La inscripción siempre queda en `situacion = P` (pendiente). Aunque se envíe `
 ## A verificar
 
 - Las empresas existentes que no tengan email: ahora es obligatorio al crear o editar una empresa (`POST /api/empresa` y `PUT /api/empresa/{id}`), pero las que ya estaban creadas sin email hay que completarlas. A ese correo llega el aviso de pendientes.
-## Etapas del proceso (revisado en la base de datos)
 
-Cada proceso tiene 4 etapas (`tipo` 1 a 4), una de cada una, y ningún proceso carece de la tipo 1 ni de la tipo 3.
+## Etapas del proceso
 
-| Tipo | Uso en esta implementación | Evidencia |
+Cada proceso tiene 4 etapas (`tipo` 1 a 4). La equivalencia sale del formulario de etapas del front (comprobada con el proceso 123 del servidor de desarrollo):
+
+| Tipo | Nombre en el formulario | Uso en esta implementación |
 |---|---|---|
-| `1` | Inscripción | Es la etapa que abre primero y con la ventana más amplia; siempre empieza antes que las demás |
-| `3` | Subasta | El sistema ya la usa como la etapa de subasta para ordenar y filtrar procesos (`procesosFiltroWeb`, `procesosUltimos` y sliders) |
-| `2` y `4` | No se usan en estos cambios | |
+| `1` | (no aparece en el formulario de etapas) | No se usa |
+| `2` | Inscripción | Ventana de inscripciones: `POST /api/inscripcion` solo funciona dentro de ella |
+| `3` | Proceso Subasta | Hora de inicio de la subasta: `verificarAcceso` bloquea el ingreso desde esa hora |
+| `4` | Publicación Ganadores | No se usa |
 
-La base no guarda un nombre por tipo, así que esta equivalencia se deduce del orden de las fechas y del uso que ya hace el sistema.
+Si un proceso no tiene etapa tipo `2`, la inscripción no se restringe por horario.
