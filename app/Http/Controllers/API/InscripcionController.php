@@ -27,12 +27,12 @@ class InscripcionController extends Controller
             'bien_id' => 'nullable|integer',
             'etapa_id' => 'nullable|integer',
         ]);
-        $list = Inscripcion::orderBy('fecha','asc');
-        if(!is_null($request->input('bien_id')) && !empty($request->input('bien_id'))){
-            $list = $list->where('bien_id','=',$request->input('bien_id'));
+        $list = Inscripcion::orderBy('fecha', 'asc');
+        if (!is_null($request->input('bien_id')) && !empty($request->input('bien_id'))) {
+            $list = $list->where('bien_id', '=', $request->input('bien_id'));
         }
-        if(!is_null($request->input('etapa_id')) && !empty($request->input('etapa_id'))){
-            $list = $list->where('etapa_id','=',$request->input('etapa_id'));
+        if (!is_null($request->input('etapa_id')) && !empty($request->input('etapa_id'))) {
+            $list = $list->where('etapa_id', '=', $request->input('etapa_id'));
         }
 
         $list = $list->latest()->paginate();
@@ -45,9 +45,9 @@ class InscripcionController extends Controller
         $request->validate([
             'usuario_id' => 'nullable|integer',
         ]);
-        $list = Inscripcion::orderBy('fecha','asc');
-        if(!is_null($request->input('usuario_id')) && !empty($request->input('usuario_id'))){
-            $list = $list->where('usuario_id','=',$request->input('usuario_id'));
+        $list = Inscripcion::orderBy('fecha', 'asc');
+        if (!is_null($request->input('usuario_id')) && !empty($request->input('usuario_id'))) {
+            $list = $list->where('usuario_id', '=', $request->input('usuario_id'));
         }
 
         $list = $list->get();
@@ -115,7 +115,7 @@ class InscripcionController extends Controller
         $datos['etapa_id'] = $request->input('etapa_id') ?: optional($etapaInscripcion)->id;
 
         $obj = "";
-        $error = DB::transaction(function() use($request,&$obj,$datos){
+        $error = DB::transaction(function () use ($request, &$obj, $datos) {
             $obj = Inscripcion::create($datos);
             if (isset($request['image'])) {
                 $obj->clearMediaCollection('images');
@@ -123,11 +123,13 @@ class InscripcionController extends Controller
                 $obj->save();
             }
             $bien = Bien::find($request->bien_id);
-            if($bien->proceso->bases=="S"){
-                $base = array("proceso_id"=>$bien->proceso_id,
-                            "situacion"=>'P',
-                            "comentario"=>'',
-                            "usuario_id"=>$request->usuario_id);
+            if ($bien->proceso->bases == "S") {
+                $base = array(
+                    "proceso_id" => $bien->proceso_id,
+                    "situacion" => 'P',
+                    "comentario" => '',
+                    "usuario_id" => $request->usuario_id
+                );
                 Bases::create($base);
             }
 
@@ -219,7 +221,7 @@ class InscripcionController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function actualizar($id,Request $request)
+    public function actualizar($id, Request $request)
     {
         $request->validate([
             'situacion' => 'nullable|string|in:P,A,R',
@@ -236,9 +238,11 @@ class InscripcionController extends Controller
         $obj = Inscripcion::find($id);
 
         // No se puede aprobar una inscripción sin voucher de pago
-        if ($request->input('situacion') === 'A'
+        if (
+            $request->input('situacion') === 'A'
             && !$request->hasFile('image')
-            && $obj->getMedia('images')->isEmpty()) {
+            && $obj->getMedia('images')->isEmpty()
+        ) {
             return response()->json(['message' => 'No se puede aprobar la inscripción: el participante no ha subido su voucher de pago.'], 422);
         }
 
@@ -266,7 +270,7 @@ class InscripcionController extends Controller
     public function destroy($id)
     {
         $obj = Inscripcion::find($id);
-        if(!empty($obj)){
+        if (!empty($obj)) {
             $obj->delete();
             return response()->json($obj);
         }
